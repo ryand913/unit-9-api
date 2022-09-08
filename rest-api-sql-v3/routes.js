@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const { User, Course } = require('./models');
 const { authenticateUser } = require('./middleware/auth-user');
+const users = require('./models/users');
 
 function asyncHandler(cb){
     return async(req, res, next) => {
@@ -46,7 +47,13 @@ router.post('/users', asyncHandler(async(req,res) => {
 //retrieve all courses
 router.get('/courses', asyncHandler(async(req,res) =>{
   try{
-    let courses = await Course.findAll();
+    let courses = await Course.findAll({
+      include: {
+        model: User
+      }
+      });
+
+    console.log(courses);
     res.status(200).json(courses);}
   catch (error) {
     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
