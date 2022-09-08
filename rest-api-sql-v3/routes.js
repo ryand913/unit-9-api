@@ -18,7 +18,12 @@ function asyncHandler(cb){
 
 //retrieve currently logged in User
 router.get('/users', authenticateUser, asyncHandler(async(req,res) =>{
-    let users = req.currentUser;
+    let users = 
+    { id: req.currentUser.id,
+      firstName: req.currentUser.firstName,
+      lastName: req.currentUser.lastName,
+      emailAddress: req.currentUser.emailAddress,
+    };
     res.status(200).json(users)
 }));
 
@@ -87,15 +92,17 @@ router.post('/courses', authenticateUser, asyncHandler(async(req,res) =>{
 router.put('/courses/:id',authenticateUser, asyncHandler(async(req,res) =>{
   let course = await Course.findByPk(req.params.id);
   try{
-    if(course){
+    if(course && req.currentUser.id === course.userId){
       course.title = req.body.title,
       course.description = req.body.description,
       course.estimatedTime = req.body.estimatedTime,
       course.materialsNeeded = req.body.materialsNeeded
       await course.update(req.body);
-      console.log(course)
+      res.status(204).end();
     }
-  res.status(204).end();
+    else if(course && req.currentUser.id !== course.userId){
+      res.status(403).end();
+    }
   } catch (error) {
     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
       const errors = error.errors.map(err => err.message);
@@ -108,10 +115,17 @@ router.put('/courses/:id',authenticateUser, asyncHandler(async(req,res) =>{
 
 router.delete('/courses/:id', authenticateUser, asyncHandler(async(req,res) =>{
   let course = await Course.findByPk(req.params.id);
-  if(course){
+  try{
+  if(course && req.currentUser.id === course.userId){
     await course.destroy();
+    res.status(204).end();
   }
-  res.status(204).end();
+  else if(course && req.currentUser.id !== course.userId){
+    res.status(403).end();
+  }
+} catch(error){
+  throw error
+}
 }));
 
 module.exports = router;
