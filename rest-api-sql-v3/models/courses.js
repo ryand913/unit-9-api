@@ -1,8 +1,8 @@
 'use strict';
 const {
-  Model
+  Model, DataTypes
 } = require('sequelize');
-module.exports = (sequelize, DataTypes) => {
+module.exports = (sequelize) => {
   class Course extends Model {
     /**
      * Helper method for defining associations.
@@ -17,9 +17,13 @@ module.exports = (sequelize, DataTypes) => {
     title:{
         type: DataTypes.STRING,
         allowNull: false,
+        notEmpty: true,
         validate: {
           notNull: {
             msg: 'A title is required'
+          },
+          notEmpty: {
+            msg: 'Please provide a title'
           }
         }
 
@@ -27,9 +31,13 @@ module.exports = (sequelize, DataTypes) => {
     description:{
         type: DataTypes.TEXT,
         allowNull: false,
+        notEmpty: true,
         validate: {
           notNull: {
             msg: 'A description is required'
+          },
+          notEmpty: {
+            msg: 'Please provide a description'
           }
         }
     },
@@ -41,6 +49,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {
     sequelize,
+    timestamps: false,
     modelName: 'Course',
   });
   Course.associate = (models) => {

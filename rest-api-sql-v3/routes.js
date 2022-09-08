@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { User } = require('./models');
+const { User, Course } = require('./models');
 const { authenticateUser } = require('./middleware/auth-user');
 
 function asyncHandler(cb){
@@ -16,17 +16,20 @@ function asyncHandler(cb){
     }
   }
 
+//retrieve currently logged in User
 router.get('/users', authenticateUser, asyncHandler(async(req,res) =>{
     let users = req.currentUser;
     res.status(200).json(users)
 }));
 
+//create new User
 router.post('/users', asyncHandler(async(req,res) => {
     try {
         await User.create(req.body);
-        res.location("/").status(201);
+        res.location("/").status(201).end();
       } catch (error) {
         if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+          console.log(error);
           const errors = error.errors.map(err => err.message);
           res.status(400).json({ errors });   
         } else {
@@ -35,36 +38,80 @@ router.post('/users', asyncHandler(async(req,res) => {
       }
     }));
 
-
+//retrieve all courses
 router.get('/courses', asyncHandler(async(req,res) =>{
-  let users = req.currentUser;
-  let course = req.currentCourse;
-  res.status(200).json(users + course);
+  try{
+    let courses = await Course.findAll();
+    res.status(200).json(courses);}
+  catch (error) {
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+      const errors = error.errors.map(err => err.message);
+      res.status(400).json({ errors });   
+    } else {
+      throw error;
+    }
+  }
 }));
 
+//get a specific course
 router.get('/courses/:id', asyncHandler(async(req,res) =>{
-  let users = req.currentUser;
-  let course = req.currentCourse;
-  res.status(200).json(users + course);
+  let course = await Course.findByPk(req.params.id);
+  if(course){
+    res.status(200).json(course);
+  } else {
+    const err = new Error("The course does not exist");
+    err.status = 404;
+    next(err);
+  }
 }));
 
-
-router.post('/courses', authenticateUser,asyncHandler(async(req,res) =>{
-  let users = req.currentUser;
-  let course = req.currentCourse;
-  res.status(200).json(users + course);
+//add a new course
+router.post('/courses', authenticateUser, asyncHandler(async(req,res) =>{
+  try {
+    await Course.create(req.body);
+    let allCourses = await Course.findAll();
+    let uriValue = allCourses.length
+    res.status(201).location(`courses/${uriValue}`).end();
+  } catch (error) {
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+      console.log(error.name)
+      const errors = error.errors.map(err => err.message);
+      res.status(400).json({ errors });   
+    } else {
+      throw error;
+    }
+  }
 }));
 
-router.put('/courses',authenticateUser, asyncHandler(async(req,res) =>{
-  let users = req.currentUser;
-  let course = req.currentCourse;
-  res.status(200).json(users + course);
+//update a course
+router.put('/courses/:id',authenticateUser, asyncHandler(async(req,res) =>{
+  let course = await Course.findByPk(req.params.id);
+  try{
+    if(course){
+      course.title = req.body.title,
+      course.description = req.body.description,
+      course.estimatedTime = req.body.estimatedTime,
+      course.materialsNeeded = req.body.materialsNeeded
+      await course.update(req.body);
+      console.log(course)
+    }
+  res.status(204).end();
+  } catch (error) {
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+      const errors = error.errors.map(err => err.message);
+      res.status(400).json({ errors });   
+    } else {
+      throw error;
+    }
+  }
 }));
 
 router.delete('/courses/:id', authenticateUser, asyncHandler(async(req,res) =>{
-  let users = req.currentUser;
-  let course = req.currentCourse;
-  res.status(200).json(users + course);
+  let course = await Course.findByPk(req.params.id);
+  if(course){
+    await course.destroy();
+  }
+  res.status(204).end();
 }));
 
 module.exports = router;

@@ -1,10 +1,10 @@
 'use strict';
 const {
-  Model
+  Model, DataTypes
 } = require('sequelize');
 
 var bcrypt = require('bcryptjs');
-module.exports = (sequelize, DataTypes) => {
+module.exports = (sequelize) => {
   class User extends Model {
     /**
      * Helper method for defining associations.
@@ -37,6 +37,10 @@ module.exports = (sequelize, DataTypes) => {
     emailAddress:{
         type: DataTypes.STRING,
         allowNull: false,
+        unique: {
+          msg: 'Email address already in use!'
+        },
+        isEmail: true,
         validate:{
           notNull: {
             msg: "An email address is required"
@@ -55,23 +59,9 @@ module.exports = (sequelize, DataTypes) => {
           }
         }
     },
-confirmedPassword: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    set(val) {
-      if ( val === this.password ) {
-        const hashedPassword = bcrypt.hashSync(val, 10);
-        this.setDataValue('confirmedPassword', hashedPassword);
-      }
-    },
-    validate: {
-      notNull: {
-        msg: 'Both passwords must match'
-      }
-    }
-  }
 }, {
     sequelize,
+    timestamps: false,
     modelName: 'User',
   });
     User.associate = (models) => {
