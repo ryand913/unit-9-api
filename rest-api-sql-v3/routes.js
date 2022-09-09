@@ -35,7 +35,6 @@ router.post('/users', asyncHandler(async(req,res) => {
         res.location("/").status(201).end();
       } catch (error) {
         if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
-          console.log(error);
           const errors = error.errors.map(err => err.message);
           res.status(400).json({ errors });   
         } else {
@@ -48,12 +47,12 @@ router.post('/users', asyncHandler(async(req,res) => {
 router.get('/courses', asyncHandler(async(req,res) =>{
   try{
     let courses = await Course.findAll({
+      attributes:{exclude: ['createdAt', 'updatedAt']},
       include: {
-        model: User
+        model: User,
+        attributes:{exclude: ['createdAt', 'updatedAt', 'password']},
       }
       });
-
-    console.log(courses);
     res.status(200).json(courses);}
   catch (error) {
     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
@@ -67,7 +66,13 @@ router.get('/courses', asyncHandler(async(req,res) =>{
 
 //get a specific course
 router.get('/courses/:id', asyncHandler(async(req,res) =>{
-  let course = await Course.findByPk(req.params.id);
+  let course = await Course.findByPk(req.params.id, {
+    attributes:{exclude: ['createdAt', 'updatedAt']},
+    include: {
+      model: User,
+      attributes:{exclude: ['createdAt', 'updatedAt', 'password']},
+    }
+  });
   if(course){
     res.status(200).json(course);
   } else {
@@ -86,7 +91,6 @@ router.post('/courses', authenticateUser, asyncHandler(async(req,res) =>{
     res.status(201).location(`courses/${uriValue}`).end();
   } catch (error) {
     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
-      console.log(error.name)
       const errors = error.errors.map(err => err.message);
       res.status(400).json({ errors });   
     } else {
@@ -97,9 +101,10 @@ router.post('/courses', authenticateUser, asyncHandler(async(req,res) =>{
 
 //update a course
 router.put('/courses/:id',authenticateUser, asyncHandler(async(req,res) =>{
-  let course = await Course.findByPk(req.params.id);
+  let course = await Course.findByPk(req.params.id)
   try{
     if(course && req.currentUser.id === course.userId){
+
       course.title = req.body.title,
       course.description = req.body.description,
       course.estimatedTime = req.body.estimatedTime,

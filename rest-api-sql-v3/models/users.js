@@ -53,6 +53,10 @@ module.exports = (sequelize) => {
     password:{
         type: DataTypes.STRING,
         allowNull: false,
+        set(val){
+          const hashPassword = bcrypt.hashSync(val,10);
+          this.setDataValue('password', hashPassword)
+        },
         validate: {
           notNull: {
             msg: 'A password is required'
@@ -66,7 +70,6 @@ module.exports = (sequelize) => {
     User.hasMany(models.Course, {
       foreignKey: {
         fieldName: 'userId',
-        allowNull: false,
       },
     });
   };
