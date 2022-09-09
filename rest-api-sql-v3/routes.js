@@ -125,6 +125,7 @@ router.put('/courses/:id',authenticateUser, asyncHandler(async(req,res) =>{
   }
 }));
 
+//delete a specified course
 router.delete('/courses/:id', authenticateUser, asyncHandler(async(req,res) =>{
   let course = await Course.findByPk(req.params.id);
   try{

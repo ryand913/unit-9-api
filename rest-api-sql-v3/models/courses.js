@@ -13,6 +13,7 @@ module.exports = (sequelize) => {
 
     }
   }
+  //definition of a Course
   Course.init({
     title:{
         type: DataTypes.STRING,
